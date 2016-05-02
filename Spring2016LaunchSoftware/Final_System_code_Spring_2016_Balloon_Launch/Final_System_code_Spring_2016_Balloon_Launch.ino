@@ -2,15 +2,9 @@
 /*
 ** Spring 2016 Launch
 */
-#include <Bridge.h>
-#include <FileIO.h>
-#include <Arduino.h>
 #include <TrapSat.h>
-#include <Servo.h>
-#include <Sensor.h>
-#include <Adafruit_BMP183.h>
 
-void makeNumStarts();
+
 /*
 ** Global Variables
 */
@@ -19,19 +13,31 @@ bool OPEN;
 const int stepsPerRevolution = 200;  // change this to fit the number of steps per revolution
 float seaLevelPressure = SENSORS_PRESSURE_SEALEVELHPA; // should be ~1000
 
-/*
-** initialize the hardware
-*/
-Servo myservo;  // create servo object to control a servo
-Adafruit_BMP183 bmp = Adafruit_BMP183(10, 11, 12, 13); 
-
+  //altimerter
+  Adafruit_BMP183 bmp= Adafruit_BMP183(10, 11, 12, 13);
+  //create servo object
+  Servo myservo;     
 void setup() {
   Serial.begin(9600);
   while (!Serial);  // Final Code -- no serial Terminal!
   Serial.println("Moving on.\n");
   Bridge.begin(115200);
   FileSystem.begin();
+
+
     
+  //accelerometer
+  pinMode(GROUND_PIN, OUTPUT);
+  pinMode(POWER_PIN, OUTPUT);
+  digitalWrite(GROUND_PIN, LOW);
+  digitalWrite(POWER_PIN, HIGH);
+
+
+  //temp 
+  TempSensor IntTempSensor(TRAPSAT_INT_TEMP_PIN, TRAPSAT_TEMP_VS); //0
+  TempSensor ExtTempSensor(TRAPSAT_EXT_TEMP_PIN, TRAPSAT_TEMP_VS); //1
+  
+
   /*
   ** Two Minute Delay
   ** Giving the Linux Processor Time to Boot
@@ -115,12 +121,21 @@ void loop() {
     OPEN= false;
    }
 
-   Serial.println("start log.\n");
+    Serial.println("start log.\n");
     sprintf(altiMessage, "Altitude: %s feet\n", String((alti*3.28084)).c_str());
     altiMessage[TRAPSAT_MSG_LEN - 1] = '\0';
     runLogEvent(altiMessage);
     Serial.println(altiMessage);    
-  
+      
+    sprintf(tempMessage, "Internal Temp: %s C\n", String(IntTempSensor.getTempC()).c_str());
+    tempMessage[TRAPSAT_MSG_LEN - 1] = '\0';
+    runLogEvent(tempMessage);
+    Serial.println(tempMessage);
+
+    sprintf(tempMessage, "External Temp: %s C\n", String(ExtTempSensor.getTempC()).c_str());
+    tempMessage[TRAPSAT_MSG_LEN - 1] = '\0';
+    runLogEvent(tempMessage);
+    Serial.println(tempMessage);
     
     /*
     ** Take Temperature Readings
