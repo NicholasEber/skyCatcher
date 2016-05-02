@@ -2,7 +2,7 @@ The main reason for this flight is to analyze particles
 that are at the altitude of 100,000 feet or higher.
 
 The Code is made in mind that controling the servo to open the lid and that all the 
-sensors need to be loged in to a filed.
+sensors need to be loged in to a file.
 
 Hardware we will plan to use:
 Altitude sensor - This will be inside the payload, it will also be reading our internal temperature with it. 
