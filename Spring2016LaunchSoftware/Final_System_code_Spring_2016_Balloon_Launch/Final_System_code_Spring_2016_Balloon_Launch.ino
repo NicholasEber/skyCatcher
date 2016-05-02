@@ -6,8 +6,9 @@
 #include <FileIO.h>
 #include <Arduino.h>
 #include <TrapSat.h>
+#include <TempSensor.h>
 #include <Servo.h>
-#include <Sensor.h>
+#include <Adafruit_Sensor.h>
 #include <Adafruit_BMP183.h>
 
 void makeNumStarts();
@@ -15,15 +16,20 @@ void makeNumStarts();
 ** Global Variables
 */
 int NumOfRestarts;
-bool OPEN;
+int OPEN = 0;         // variable for reading the pushbutton status
 const int stepsPerRevolution = 200;  // change this to fit the number of steps per revolution
 float seaLevelPressure = SENSORS_PRESSURE_SEALEVELHPA; // should be ~1000
+
+const int buttonPin = 3;     // the number of the pushbutton pin
+int buttonState = 0;         // variable for reading the pushbutton status
 
 /*
 ** initialize the hardware
 */
 Servo myservo;  // create servo object to control a servo
-Adafruit_BMP183 bmp = Adafruit_BMP183(10, 11, 12, 13); 
+Adafruit_BMP183 bmp = Adafruit_BMP183(10, 11, 12, 13); //altimieter
+TempSensor IntTempSensor(TRAPSAT_INT_TEMP_PIN, TRAPSAT_TEMP_VS);
+TempSensor ExtTempSensor(TRAPSAT_EXT_TEMP_PIN, TRAPSAT_TEMP_VS);
 
 void setup() {
   Serial.begin(9600);
@@ -31,6 +37,12 @@ void setup() {
   Serial.println("Moving on.\n");
   Bridge.begin(115200);
   FileSystem.begin();
+
+  pinMode(GROUND_PIN, OUTPUT);
+  pinMode(POWER_PIN, OUTPUT);
+  digitalWrite(GROUND_PIN, LOW);
+  digitalWrite(POWER_PIN, HIGH);
+  pinMode(buttonPin, INPUT);
     
   /*
   ** Two Minute Delay
@@ -50,7 +62,6 @@ void setup() {
   sprintf(startMsg, "System Start (%d)\n", getNumStarts());
   startMsg[TRAPSAT_MSG_LEN - 1] = '\0';
   runLogEvent(startMsg);
-  OPEN = false;
   myservo.attach(9);  // attaches the servo on pin 9 to the servo object
   
   Serial.println("Ending startup.\n");
@@ -63,6 +74,9 @@ void loop() {
   */
   char altiMessage[TRAPSAT_MSG_LEN];
   memset(altiMessage, 0, sizeof(altiMessage));
+  
+  // read the state of the pushbutton value:
+  OPEN = digitalRead(buttonPin);
 
   /*
   ** get current Altitude
@@ -115,13 +129,35 @@ void loop() {
     OPEN= false;
    }
 
-   Serial.println("start log.\n");
+    Serial.println("start log.\n");
     sprintf(altiMessage, "Altitude: %s feet\n", String((alti*3.28084)).c_str());
     altiMessage[TRAPSAT_MSG_LEN - 1] = '\0';
     runLogEvent(altiMessage);
-    Serial.println(altiMessage);    
-  
+    Serial.println(altiMessage);   
     
+    sprintf(altiMessage, "Internal Temp: %s C\n", String(IntTempSensor.getTempC()).c_str());
+    altiMessage[TRAPSAT_MSG_LEN - 1] = '\0';
+    runLogEvent(altiMessage);
+    Serial.println(altiMessage); 
+    
+    sprintf(altiMessage, "External Temp: %s C\n", String(ExtTempSensor.getTempC()).c_str());
+    altiMessage[TRAPSAT_MSG_LEN - 1] = '\0';
+    runLogEvent(altiMessage);
+    Serial.println(altiMessage);
+
+  //accelerometer 
+  // print the sensor values:
+  Serial.print(analogRead(X_PIN));
+  // print a tab between values:
+  Serial.print("\t");
+  Serial.print(analogRead(Y_PIN));
+  // print a tab between values:
+  Serial.print("\t");
+  Serial.print(analogRead(Z_PIN));
+  Serial.println();
+  // delay before next reading:
+  delay(100);
+  
     /*
     ** Take Temperature Readings
     

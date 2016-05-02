@@ -17,6 +17,11 @@
 #define TRAPSAT_NIC_SW_PIN 8
 #define TRAPSAT_TEMP_VS 4.65
 #define TRAPSAT_FLASH_PIN 2
+#define GROUND_PIN 18		// analog input pin 4 -- ground
+#define POWER_PIN 19		// analog input pin 5 -- voltage
+#define X_PIN A3			// x-axis of the accelerometer
+#define Y_PIN A2			// y-axis
+#define Z_PIN A1			// z-axis (only on 3-axis models)
 
 
 #define TRAPSAT_MSG_LEN 80
