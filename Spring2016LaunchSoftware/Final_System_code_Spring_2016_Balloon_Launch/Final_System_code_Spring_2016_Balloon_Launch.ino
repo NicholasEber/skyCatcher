@@ -16,12 +16,10 @@ void makeNumStarts();
 ** Global Variables
 */
 int NumOfRestarts;
-int OPEN = 0;         // variable for reading the pushbutton status
+int lStat = 0;         // variable for reading the pushbutton status
 const int stepsPerRevolution = 200;  // change this to fit the number of steps per revolution
 float seaLevelPressure = SENSORS_PRESSURE_SEALEVELHPA; // should be ~1000
 
-const int buttonPin = 3;     // the number of the pushbutton pin
-int buttonState = 0;         // variable for reading the pushbutton status
 
 /*
 ** initialize the hardware
@@ -42,13 +40,14 @@ void setup() {
   pinMode(POWER_PIN, OUTPUT);
   digitalWrite(GROUND_PIN, LOW);
   digitalWrite(POWER_PIN, HIGH);
-  pinMode(buttonPin, INPUT);
+  pinMode(MOTOR_PIN, INPUT);
+  pinMode(BUTTON_PIN,INPUT);
     
   /*
   ** Two Minute Delay
   ** Giving the Linux Processor Time to Boot
   */
-  delay(120000);
+  delay(12000);
   Serial.println("Linux Processor Booted.\n");
   
   /*
@@ -62,7 +61,7 @@ void setup() {
   sprintf(startMsg, "System Start (%d)\n", getNumStarts());
   startMsg[TRAPSAT_MSG_LEN - 1] = '\0';
   runLogEvent(startMsg);
-  myservo.attach(9);  // attaches the servo on pin 9 to the servo object
+  myservo.attach(MOTOR_PIN);  // attaches the servo on pin 9 to the servo object
   
   Serial.println("Ending startup.\n");
 }
@@ -75,77 +74,62 @@ void loop() {
   char altiMessage[TRAPSAT_MSG_LEN];
   memset(altiMessage, 0, sizeof(altiMessage));
   
-  // read the state of the pushbutton value:
-  OPEN = digitalRead(buttonPin);
-
   /*
-  ** get current Altitude
+  ** get info
   */
+  lStat = digitalRead(MOTOR_PIN);// 0=OPEN, 1=Close
   float alti= bmp.getAltitude(seaLevelPressure);
+  float pres= bmp.getPressure();
+  float iTemp= IntTempSensor.getTempC();
+  float eTemp= ExtTempSensor.getTempC();
+  int xpin= analogRead(X_PIN);
+  int ypin= analogRead(Y_PIN);
+  int zpin= analogRead(Z_PIN);
+  
   
   /*
   ** Call Motor to open
   */
   Serial.println("Check to open.\n");  
-  if(alti > 30480 && !OPEN) /*100000 feet*/
+  if((alti > 30480) /*|| ?time?*/ && lStat!=0) /*100000 feet*/
    {
     // step one revolution in one direction:
     Serial.println("Opening Lids");
-
-    
     for (int pos = 0; pos <= 180; pos += 1) { // goes from 0 degrees to 180 degrees
       // in steps of 1 degree
       myservo.write(pos);              // tell servo to go to position in variable 'pos'
       delay(15);                       // waits 15ms for the servo to reach the position
     }
-    
-    sprintf(altiMessage, "Altitude: %s feet: Opening Lids\n", String((alti*3.28084)).c_str());
-    altiMessage[TRAPSAT_MSG_LEN - 1] = '\0';
-    runLogEvent(altiMessage);
-    
-    Serial.println(altiMessage); 
-    OPEN= true;
-    delay(500);
    }
    
     /*
     ** Call Motor to close
     */
    Serial.println("Check closing.\n");
-   if(bmp.getAltitude(seaLevelPressure) < 30480 && OPEN) /*100000 feet*/
+   if((alti < 30480) /*|| ?time?*/&& lStat==0) /*100000 feet*/
    {
     // step revolution direction:
     Serial.println("Closing Lids");
-    
     for (int pos = 180; pos >= 0; pos -= 1) { // goes from 180 degrees to 0 degrees
       myservo.write(pos);              // tell servo to go to position in variable 'pos'
       delay(15);                       // waits 15ms for the servo to reach the position
-    } 
-  
-    sprintf(altiMessage, "Altitude: %s feet: Closing Lids\n", String((alti*3.28084)).c_str());
-    altiMessage[TRAPSAT_MSG_LEN - 1] = '\0';
-    runLogEvent(altiMessage);
-
-    OPEN= false;
+    }
    }
 
     Serial.println("start log.\n");
-    sprintf(altiMessage, "Altitude: %s feet\n", String((alti*3.28084)).c_str());
-    altiMessage[TRAPSAT_MSG_LEN - 1] = '\0';
-    runLogEvent(altiMessage);
-    Serial.println(altiMessage);   
-    
-    sprintf(altiMessage, "Internal Temp: %s C\n", String(IntTempSensor.getTempC()).c_str());
-    altiMessage[TRAPSAT_MSG_LEN - 1] = '\0';
-    runLogEvent(altiMessage);
-    Serial.println(altiMessage); 
-    
-    sprintf(altiMessage, "External Temp: %s C\n", String(ExtTempSensor.getTempC()).c_str());
+    //recored: time, Altitude,Pressure, Internal Temp, External Temp, Xpin, Ypin, Zpin, Lid status
+    sprintf(altiMessage, ": %s, %s, %s, %s, %s, %s, %s, %s\n", String(alti).c_str(),
+                                           String(pres).c_str(),String(iTemp).c_str(),
+                                           String(eTemp).c_str(),String(xpin).c_str(),
+                                           String(ypin).c_str(),String(zpin).c_str(),
+                                           String(lStat).c_str());
     altiMessage[TRAPSAT_MSG_LEN - 1] = '\0';
     runLogEvent(altiMessage);
     Serial.println(altiMessage);
-
-  //accelerometer 
+    float volt= IntTempSensor.getVoltOut();
+    Serial.println(volt);  
+  /*
+  // accelerometer 
   // print the sensor values:
   Serial.print(analogRead(X_PIN));
   // print a tab between values:
@@ -157,17 +141,7 @@ void loop() {
   Serial.println();
   // delay before next reading:
   delay(100);
-  
-    /*
-    ** Take Temperature Readings
-    
-    sprintf(tempMessage, "Internal Temp: %s C\n", String(IntTempSensor.getTempC()).c_str());
-    tempMessage[TRAPSAT_MSG_LEN - 1] = '\0';
-    runLogEvent(tempMessage);
-    Serial.println(tempMessage);
-    
-    */
-
+  */
 
     
  //runLogEvent("System Finished!\n");
