@@ -22,7 +22,7 @@
 #define X_PIN A3			// x-axis of the accelerometer
 #define Y_PIN A2			// y-axis
 #define Z_PIN A1			// z-axis (only on 3-axis models)
-#define BUTTON_PIN 5
+#define BUTTON_PIN 4
 #define MOTOR_PIN 9
 
 

@@ -77,7 +77,7 @@ void loop() {
   /*
   ** get info
   */
-  lStat = digitalRead(MOTOR_PIN);// 0=OPEN, 1=Close
+  lStat = digitalRead(BUTTON_PIN);// 0=OPEN, 1=Close
   float alti= bmp.getAltitude(seaLevelPressure);
   float pres= bmp.getPressure();
   float iTemp= IntTempSensor.getTempC();
@@ -91,29 +91,29 @@ void loop() {
   ** Call Motor to open
   */
   Serial.println("Check to open.\n");  
-  if((alti > 30480) /*|| ?time?*/ && lStat!=0) /*100000 feet*/
+  if((alti > 30480) /*|| ?time?*/ && lStat==LOW) /*100000 feet*/
    {
     // step one revolution in one direction:
     Serial.println("Opening Lids");
-    for (int pos = 0; pos <= 180; pos += 1) { // goes from 0 degrees to 180 degrees
-      // in steps of 1 degree
-      myservo.write(pos);              // tell servo to go to position in variable 'pos'
+    /*for (int pos = 0; pos <= 180; pos += 1) { // goes from 0 degrees to 180 degrees
+      // in steps of 1 degree*/
+      myservo.write(0);              // tell servo to go to position in variable 'pos'
       delay(15);                       // waits 15ms for the servo to reach the position
-    }
+    
    }
    
     /*
     ** Call Motor to close
     */
    Serial.println("Check closing.\n");
-   if((alti < 30480) /*|| ?time?*/&& lStat==0) /*100000 feet*/
+   if((alti < 30480) /*|| ?time?*/&& lStat==HIGH) /*100000 feet*/
    {
     // step revolution direction:
     Serial.println("Closing Lids");
-    for (int pos = 180; pos >= 0; pos -= 1) { // goes from 180 degrees to 0 degrees
-      myservo.write(pos);              // tell servo to go to position in variable 'pos'
+    /*for (int pos = 180; pos >= 0; pos -= 1) { // goes from 180 degrees to 0 degrees*/
+      myservo.write(180);              // tell servo to go to position in variable 'pos'
       delay(15);                       // waits 15ms for the servo to reach the position
-    }
+    
    }
 
     Serial.println("start log.\n");
