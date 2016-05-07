@@ -24,7 +24,8 @@ float seaLevelPressure = SENSORS_PRESSURE_SEALEVELHPA; // should be ~1000
 /*
 ** initialize the hardware
 */
-Servo myservo;  // create servo object to control a servo
+Servo lidServo;  // create servo object to control a servo to open lid
+Servo lockServo; // controls the servo to lock the lid
 Adafruit_BMP183 bmp = Adafruit_BMP183(10, 11, 12, 13); //altimieter
 TempSensor IntTempSensor(TRAPSAT_INT_TEMP_PIN, TRAPSAT_TEMP_VS);
 TempSensor ExtTempSensor(TRAPSAT_EXT_TEMP_PIN, TRAPSAT_TEMP_VS);
@@ -36,19 +37,29 @@ void setup() {
   Bridge.begin(115200);
   FileSystem.begin();
 
-  pinMode(GROUND_PIN, OUTPUT);
-  pinMode(POWER_PIN, OUTPUT);
-  digitalWrite(GROUND_PIN, LOW);
-  digitalWrite(POWER_PIN, HIGH);
-  pinMode(MOTOR_PIN, INPUT);
+  pinMode(LID_MOTOR_PIN, INPUT);
+  pinMode(LOCK_MOTOR_PIN, INPUT);
   pinMode(BUTTON_PIN,INPUT);
-    
+  lidServo.attach(LID_MOTOR_PIN);  // attaches the servo on pin 9 to the servo object
+  lidServo.attach(LOCK_MOTOR_PIN);  // attaches the servo on pin 10 to the servo object
+
+  /*
+  ** unlocking and locking lid geting ready to fly.
+  ** 15 sec after power to close lid and lock
+  */
+  Serial.println("un-locking lid.");
+  lockServo.write(0);
+  delay(15000);
+  Serial.println("Locking lid.");
+  lockServo.write(180);
+   
   /*
   ** Two Minute Delay
   ** Giving the Linux Processor Time to Boot
   */
   delay(12000);
   Serial.println("Linux Processor Booted.\n");
+
   
   /*
   ** Check For System Restart And Adjust
@@ -61,13 +72,14 @@ void setup() {
   sprintf(startMsg, "System Start (%d)\n", getNumStarts());
   startMsg[TRAPSAT_MSG_LEN - 1] = '\0';
   runLogEvent(startMsg);
-  myservo.attach(MOTOR_PIN);  // attaches the servo on pin 9 to the servo object
   
   Serial.println("Ending startup.\n");
 }
 
 void loop() {
-  
+
+  TempSensor IntTempSensor(TRAPSAT_INT_TEMP_PIN, TRAPSAT_TEMP_VS);
+  TempSensor ExtTempSensor(TRAPSAT_EXT_TEMP_PIN, TRAPSAT_TEMP_VS);
   /*
   ** Clear the Altitude Buffer
   */
@@ -88,32 +100,36 @@ void loop() {
   
   
   /*
-  ** Call Motor to open
+  ** Call Motor to open  -  need to change position based on lid
   */
   Serial.println("Check to open.\n");  
-  if((alti > 30480) /*|| ?time?*/ && lStat==LOW) /*100000 feet*/
+  if(/*(alti > 30480) /*|| ?time?*/ lStat==LOW) /*100000 feet*/
    {
     // step one revolution in one direction:
     Serial.println("Opening Lids");
     /*for (int pos = 0; pos <= 180; pos += 1) { // goes from 0 degrees to 180 degrees
       // in steps of 1 degree*/
-      myservo.write(0);              // tell servo to go to position in variable 'pos'
-      delay(15);                       // waits 15ms for the servo to reach the position
+      lockServo.write(0);
+      delay(1500);                       // waits 1.5 for the servo to reach the position
+      lidServo.write(0);              // tell servo to go to position in variable 'pos'
+
+    
     
    }
    
     /*
-    ** Call Motor to close
+    ** Call Motor to close  -  need to change position based on lid
     */
    Serial.println("Check closing.\n");
-   if((alti < 30480) /*|| ?time?*/&& lStat==HIGH) /*100000 feet*/
+   if(/*(alti < 30480) /*|| ?time?*/ lStat==HIGH) /*100000 feet*/
    {
     // step revolution direction:
     Serial.println("Closing Lids");
     /*for (int pos = 180; pos >= 0; pos -= 1) { // goes from 180 degrees to 0 degrees*/
-      myservo.write(180);              // tell servo to go to position in variable 'pos'
-      delay(15);                       // waits 15ms for the servo to reach the position
-    
+ 
+      lidServo.write(180);              // tell servo to go to position in variable 'pos'                
+      delay(1000);                     // waits 10sec for the servo to reach the position
+      lockServo.write(0);
    }
 
     Serial.println("start log.\n");
@@ -145,5 +161,5 @@ void loop() {
 
     
  //runLogEvent("System Finished!\n");
-  delay(5000);
+  delay(4000);
 }

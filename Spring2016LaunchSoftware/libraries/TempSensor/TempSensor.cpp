@@ -56,6 +56,13 @@ float TempSensor::getVoltOut()
 
 float TempSensor::getTempC()
 {
+	double Temp;
+    Temp = log(10000.0*((1024.0/analogRead(myPin)-1)));
+	 
+    Temp = 1 / (0.001129148 + (0.000234125 + (0.0000000876741 * Temp * Temp ))* Temp );
+    Temp = Temp - 273.15;            // Convert Kelvin to Celcius
+    return Temp;
+    
     //int reading = analogRead(myPin);
     //float voltage = reading * myVs;
     //voltage = voltage / 1024.0;
@@ -65,7 +72,7 @@ float TempSensor::getTempC()
     */
     //float temperatureC = (voltage - 0.5) * 100 ;
     //return temperatureC;
-    return (((analogRead(myPin) * myVs / 1024.0) - 0.5) * 100);
+    //return (((analogRead(myPin) * myVs / 1024.0) - 0.5) * 100);
 }
 
 float TempSensor::getTempF()

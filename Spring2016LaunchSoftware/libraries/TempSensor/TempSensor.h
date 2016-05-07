@@ -2,6 +2,7 @@
 #define TEMPSENSOR_H_
 
 #include <Arduino.h>
+#include <math.h>
 
 #define MIN_PIN_NUM 0
 #define MAX_PIN_NUM 5
