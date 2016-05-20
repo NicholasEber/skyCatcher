@@ -49,7 +49,7 @@ char* getTimeStamp()
 	int secondSince	= rest / 1000;
 	rest = rest % 1000;
 	
-  sprintf(timeStamp, "%0d_%0dh%0dm%0ds%0dms", getNumStarts(), hourSince, minuteSince, secondSince, rest);
+  sprintf(timeStamp, "%0d, %0dh%0dm%0ds%0dms", getNumStarts(), hourSince, minuteSince, secondSince, rest);
   timeStamp[bytes - 1] = '\0';
 	// 000_00h00m00s000ms
 	return timeStamp;
